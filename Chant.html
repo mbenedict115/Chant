@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <title>Liturgia</title>
+        <script>
+            function getNothing() {
+                return document.createElement("div");
+            }
+            class AntiphonaleRomanum {
+                static getPrayersBeforeLittleOffice() {
+                    const element = document.createElement("p");
+                    element.innerText = "Ave Maria";
+                    return element;
+                }
+                static getDeusInAdjutoriumTonusFestivus(isASeptuagesimaUsqueAdPascha) {
+                    const element = document.createElement("p");
+                    element.innerText = "Deus in adjutorium (Tonus festivus). " + (isASeptuagesimaUsqueAdPascha ? "Laus tibi..." : "Gloria Patri...");
+                    return element;
+                }
+                static getDeusInAdjutoriumTonusFerialis(isASeptuagesimaUsqueAdPascha) {
+                    const element = document.createElement("p");
+                    element.innerText = "Deus in adjutorium (Tonus ferialis). " + (isASeptuagesimaUsqueAdPascha ? "Laus tibi..." : "Gloria Patri...");
+                    return element;
+                }
+            }
+            class DeaconOrHigher {
+                getSalutation() {
+                    const element = document.createElement("p");
+                    element.innerText = "Dominus vobiscum...";
+                    return element;
+                }
+            }
+            class LessThanDeacon {
+                getSalutation() {
+                    const element = document.createElement("p");
+                    element.innerText = "Domine exaudi...";
+                    return element;
+                }
+            }
+            class Rubrics {
+
+            }
+            class DivinoAfflatu extends Rubrics {
+                constructor(isASeptuagesimaUsqueAdPascha, isSundayOrFeast) {
+                    super();
+                    this.isASeptuagesimaUsqueAdPascha = isASeptuagesimaUsqueAdPascha;
+                    this.isSundayOrFeast = isSundayOrFeast;
+                }
+                getPrayersBeforeLittleOffice(isSundayOrFeast) {
+                    return AntiphonaleRomanum.getPrayersBeforeLittleOffice();
+                }
+                getMajorHoursDeusInAdjutorium() {
+                    if (this.isSundayOrFeast) {
+                        return AntiphonaleRomanum.getDeusInAdjutoriumTonusFestivus(this.isASeptuagesimaUsqueAdPascha);
+                    } else {
+                        return AntiphonaleRomanum.getDeusInAdjutoriumTonusFerialis(this.isASeptuagesimaUsqueAdPascha);
+                    }
+                }
+                getMinorHoursDeusInAdjutorium() {
+                    return AntiphonaleRomanum.getDeusInAdjutoriumTonusFerialis(this.isASeptuagesimaUsqueAdPascha);
+                }
+            }
+            class CumNostra extends DivinoAfflatu {
+                constructor(isASeptuagesimaUsqueAdPascha, isSundayOrFeast) {
+                    super(isASeptuagesimaUsqueAdPascha, isSundayOrFeast);
+                }
+                getPrayersBeforeLittleOffice() {
+                    return getNothing();
+                }
+            }
+            class RubricarumInstructum extends CumNostra {
+                constructor(isASeptuagesimaUsqueAdPascha, isSundayOrFeast) {
+                    super(isASeptuagesimaUsqueAdPascha, isSundayOrFeast);
+                }
+                getMajorHoursDeusInAdjutorium() {
+                    return AntiphonaleRomanum.getDeusInAdjutoriumTonusFestivus(this.isASeptuagesimaUsqueAdPascha);
+                }
+                getMinorHoursDeusInAdjutorium() {
+                    return AntiphonaleRomanum.getDeusInAdjutoriumTonusFerialis(this.isASeptuagesimaUsqueAdPascha);
+                }
+            }
+            class Hour {
+                constructor(rubrics) {
+                    this.rubrics = rubrics;
+                }
+                getHour() {
+                    const element = document.createElement("div");
+                    element.appendChild(this.getIntro());
+                    //element.appendChild(this.getBody());
+                    //element.appendChild(this.getConclusion());
+                    return element;
+                }
+            }
+            class Vespers extends Hour {
+                constructor(rubrics) {
+                    super(rubrics);
+                }
+                getIntro() {
+                    const element = document.createElement("div");
+                    element.appendChild(this.rubrics.getPrayersBeforeLittleOffice());
+                    element.appendChild(this.rubrics.getMajorHoursDeusInAdjutorium());
+                    return element;
+                }
+            }
+            class VespersPerAnnum extends Vespers {
+                constructor(rubrics) {
+                    super(rubrics);
+                }
+            }
+            class VespersInAdventu extends VespersPerAnnum {
+                constructor(rubrics) {
+                    super(rubrics)
+                }
+            }
+            class VespersPostNativitatem extends VespersPerAnnum {
+                constructor(rubrics) {
+                    super(rubrics);
+                }
+            }
+            class Gathering {
+                constructor(rubrics) {
+                    this.rubrics = rubrics;
+                }
+                getElement() {
+                    const element = document.createElement("div");
+                    const title = document.createElement("h1");
+                    title.innerText = "Liturgia";
+                    element.appendChild(title);
+                    element.appendChild(new VespersPerAnnum(this.rubrics).getHour());
+                    return element;
+                }
+            }
+        </script>
+    </head>
+
+    <body>
+        <script>
+            const person = new LessThanDeacon();
+            const rubrics = new RubricarumInstructum(false, false);
+            document.body.appendChild(new Gathering(rubrics).getElement());
+        </script>
+    </body>
+</html>
