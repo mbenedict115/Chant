@@ -16,10 +16,43 @@
                 font-size: 130%;
                 color: #d00!important;
             }
+            body {
+                max-width: 800px;
+                margin-left: auto;
+                margin-right: auto;
+            }
         </style>
         <title>Liturgia</title>
         <link href='https://fonts.googleapis.com/css?family=Crimson+Text:400,700,700italic,400italic' rel='stylesheet' type='text/css'>
         <script type="text/javascript" src="https://bbloomf.github.io/jgabc/exsurge.min.js"></script>
+        <script>
+            function setCookie(cname, cvalue, exdays) {
+                var str = cname + "=" + cvalue;
+                if (exdays) {
+                    var d = new Date();
+                    d.setTime(d.getTime() + (exdays * 24 * 60 * 60 * 1000));
+                    var expires = "expires=" + d.toUTCString();
+                    str += ";" + expires;
+                }
+                str += ";path=/";
+                document.cookie = str;
+            }
+
+            function getCookie(cname) {
+                var name = cname + "=";
+                var ca = document.cookie.split(';');
+                for(var i = 0; i < ca.length; i++) {
+                    var c = ca[i];
+                    while (c.charAt(0) == ' ') {
+                    c = c.substring(1);
+                    }
+                    if (c.indexOf(name) == 0) {
+                    return c.substring(name.length, c.length);
+                    }
+                }
+                return "";
+            }
+        </script>
         <script>
             function chant(chantContainer, annotation, gabc) {
                 const ctxt = new exsurge.ChantContext();
@@ -176,9 +209,6 @@
                 }
                 getElement() {
                     const element = document.createElement("div");
-                    const title = document.createElement("h1");
-                    title.innerText = "Liturgia";
-                    element.appendChild(title);
                     element.appendChild(new VespersPerAnnum(this.rubrics).getHour());
                     element.appendChild(AntiphonaleRomanum.getOratioPostDivinumOfficium());
                     return element;
@@ -189,28 +219,82 @@
     <body>
         <h1>Options</h1>
             <p>Rubrics</p>
-            <input id="divinoAfflatuRadioButtton" type="radio" name="rubrics" value="DivinoAfflatu" checked="true">
+            <input id="divinoAfflatuRadioButtton" class="options" type="radio" name="rubrics" value="DivinoAfflatu">
             <label for="DivinoAfflatu">Divino Afflatu (Pius X)</label><br>
-            <input id="cumNostraRadioButtton" type="radio" name="rubrics" value="CumNostra">
+            <input id="cumNostraRadioButtton" class="options" type="radio" name="rubrics" value="CumNostra">
             <label for="CumNostra">Cum Nostra (Pius XII)</label><br>
-            <input id="rubricarumInstructumRadioButtton" type="radio" name="rubrics" value="RubricarumInstructum">
+            <input id="rubricarumInstructumRadioButtton" class="options" type="radio" name="rubrics" value="RubricarumInstructum">
             <label for="RubricarumInstructum">Rubricarum Instructum (John XXIII)</label><br>
-        <h1>Office</h1>
-        <button id="goButton">Go</button>
         <div id="liturgy"></div>
     </body>
     <script>
-        document.getElementById("goButton").addEventListener("click", () => {
-            const person = new LessThanDeacon();
-            const rubrics =
-                document.getElementById("divinoAfflatuRadioButtton").checked ? new DivinoAfflatu(false, false) :
-                document.getElementById("cumNostraRadioButtton").checked ? new CumNostra(false, false) :
-                document.getElementById("rubricarumInstructumRadioButtton").checked ? new RubricarumInstructum(false, false) :
-                null;
-            const liturgy = document.getElementById("liturgy");
-            liturgy.innerText = null;
-            liturgy.appendChild(new Gathering(rubrics).getElement());
-        });
+        (() => {
+            const controlsToSettings = () => {
+                const settings = {
+                    rubrics:
+                        document.getElementById("divinoAfflatuRadioButtton").checked ? "divinoAfflatu" :
+                        document.getElementById("cumNostraRadioButtton").checked ? "cumNostra" :
+                        document.getElementById("rubricarumInstructumRadioButtton").checked ? "rubricarumInstructum" :
+                        null
+                };
+                return settings;
+            }
 
+            const settingsToControls = settings => {
+                switch (settings.rubrics) {
+                    case "divinoAfflatu":
+                        document.getElementById("divinoAfflatuRadioButtton").checked = true;
+                        break;
+                    case "cumNostra":
+                        document.getElementById("cumNostraRadioButtton").checked = true;
+                        break;
+                    case "rubricarumInstructum":
+                        document.getElementById("rubricarumInstructumRadioButtton").checked = true;
+                        break;
+                }
+            }
+
+            const gatheringFromSettings = settings => {
+                var rubrics;
+                switch (settings.rubrics) {
+                    case "divinoAfflatu":
+                        rubrics = new DivinoAfflatu(false, false);
+                        break;
+                    case "cumNostra":
+                        rubrics = new CumNostra(false, false);
+                        break;
+                    case "rubricarumInstructum":
+                        rubrics = new RubricarumInstructum(false, false);
+                        break;
+                }
+
+                return new Gathering(rubrics);
+            }
+
+            const setDocument = settings => {
+                liturgy.innerText = null;
+                liturgy.appendChild(gatheringFromSettings(settings).getElement());
+            }
+
+            window.addEventListener("load", () => {
+                const settingsJson = getCookie("settings");
+                
+                const settings = settingsJson ?
+                    JSON.parse(settingsJson) :
+                    { rubrics: "divinoAfflatu" };
+
+                settingsToControls(settings);
+                setDocument(settings);
+                
+                for (optionElement of document.getElementsByClassName("options")) {
+                    addEventListener("click", () => {
+                        const settings = controlsToSettings();
+                        const liturgy = document.getElementById("liturgy");
+                        setCookie("settings", JSON.stringify(settings));
+                        setDocument(settings);
+                    });
+                }
+            });
+        })();
     </script>
 </html>
