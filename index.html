@@ -20,6 +20,7 @@
                 max-width: 800px;
                 margin-left: auto;
                 margin-right: auto;
+                padding: 1em;
             }
         </style>
         <title>Liturgia</title>
@@ -54,9 +55,10 @@
             }
         </script>
         <script>
-            function chant(chantContainer, annotation, gabc) {
-                const ctxt = new exsurge.ChantContext();
+            function chant(annotation, gabc, chantContainer) {
+                if (!chantContainer) chantContainer = document.createElement("div");
 
+                const ctxt = new exsurge.ChantContext(exsurge.TextMeasuringStrategy.Canvas);
 
                 ctxt.specialCharProperties['font-family'] = "'Versiculum'";
                 ctxt.specialCharProperties['font-variant'] = 'normal';
@@ -72,7 +74,7 @@
 
                 const mappings = exsurge.Gabc.createMappingsFromSource(ctxt, gabc);
                 const score = new exsurge.ChantScore(ctxt, mappings, true);
-                if (annotation != null) score.annotation = new exsurge.Annotation(ctxt, annotation);
+                if (annotation) score.annotation = new exsurge.Annotation(ctxt, annotation);
                 
                 const layoutChant = () => {
                     score.performLayoutAsync(ctxt, () => {
@@ -84,6 +86,41 @@
 
                 layoutChant();
                 window.addEventListener("resize", layoutChant);
+                return chantContainer;
+            }
+
+            function getGabc(text, notes) {
+                const syllables = getSyllables(text);
+                const melismas = notes.split(" ");
+                const clef = melismas[0];
+                var gabc = clef ? `(${clef})` : "";
+                var length = Math.min(syllables.length, melismas.length - 1);
+                for (var i = 0; i < length; ++i) {
+                    const syllable = syllables[i];
+                    const melisma = melismas[i + 1];
+                    const maybeSpace = syllable.isLast ? " " : "";
+                    gabc += `${syllable.text}(${melisma})${maybeSpace}`;
+                }
+                return gabc;
+            }
+
+            function getSyllables(latinText) {
+                const latin = new exsurge.Latin();
+                const words = latin.syllabify(latinText);
+                return words.flatMap(syllables =>
+                    syllables.map((syllableText, index, array) =>
+                        new Syllable(syllableText, index === 0, index === array.length - 1)));
+            }
+
+            class Syllable {
+                constructor(text, isFirst, isLast) {
+                    this.text = text;
+                    this.isFirst = isFirst;
+                    this.isLast = isLast;
+                }
+                toString() {
+                    return this.text + (this.isLast ? " ": "");
+                }
             }
         </script>
         <script>
@@ -105,14 +142,27 @@
                     return element;
                 }
                 static getDeusInAdjutoriumTonusFestivus(isASeptuagesimaUsqueAdPascha) {
-                    const element = document.createElement("p");
-                    element.innerText = "c3f(De)(us) (<b>in</b>) (adjutorium (Tonus festivus). " + (isASeptuagesimaUsqueAdPascha ? "Laus tibi..." : "Gloria Patri...");
-                    return element;
+
                 }
                 static getDeusInAdjutoriumTonusFerialis(isASeptuagesimaUsqueAdPascha) {
-                    const element = document.createElement("p");
-                    chant(element, "\Vbar", "(c3)De(h)us(h'_,) ad(h)ju(h)tó(i)ri(h)um(h) me(h)um(h'_) in(h)tén(g)de.(h.:) \Rbar")
-                    return element;
+                    const latin = "Deus in adjutórium meum inténde. " +
+                        "R/. Dómine ad adjuvándum me festína. " +
+                        "Glória Patri, et Fílio, * et Spirítui Sancto. " +
+                        "Sicut erat in princípio, et nunc, et semper, et in sǽcula sæculórum. Amen. " +
+                        (isASeptuagesimaUsqueAdPascha ?
+                            "Laus tibi Dómine Rex ætérnæ glóriæ." :
+                            "Allelúja.");
+
+                    const numes = "c3 h h'_, h h h i h h h h'_ h g h.:: " +
+                        "h h h'_, h h h h h h'_ h g h.: " +
+                        "h h h h h h h h h'_, h h h h h g h.: " +
+                        "h h h h h h h h h h h h h h., h h h h h h h h h g h.; " +
+                        (isASeptuagesimaUsqueAdPascha ?
+                            "h h h h h h'_ h h h i h' h g.::" :
+                            "h i hg~ g.::");
+                    
+                    return chant("V/.", getGabc(latin, numes));
+
                 }
             }
             class DeaconOrHigher {
@@ -244,7 +294,7 @@
                 switch (settings.rubrics) {
                     case "divinoAfflatu":
                         document.getElementById("divinoAfflatuRadioButtton").checked = true;
-                        break;
+                        break;""
                     case "cumNostra":
                         document.getElementById("cumNostraRadioButtton").checked = true;
                         break;
@@ -255,16 +305,17 @@
             }
 
             const gatheringFromSettings = settings => {
+                const isASeptuagesimaUsqueAdPascha = true;
                 var rubrics;
                 switch (settings.rubrics) {
                     case "divinoAfflatu":
-                        rubrics = new DivinoAfflatu(false, false);
+                        rubrics = new DivinoAfflatu(isASeptuagesimaUsqueAdPascha, false);
                         break;
                     case "cumNostra":
-                        rubrics = new CumNostra(false, false);
+                        rubrics = new CumNostra(isASeptuagesimaUsqueAdPascha, false);
                         break;
                     case "rubricarumInstructum":
-                        rubrics = new RubricarumInstructum(false, false);
+                        rubrics = new RubricarumInstructum(isASeptuagesimaUsqueAdPascha, false);
                         break;
                 }
 
