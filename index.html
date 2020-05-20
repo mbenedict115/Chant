@@ -67,10 +67,10 @@
                 ctxt.specialCharText = function(char) { return char.toLowerCase(); };
                 ctxt.setRubricColor('#d00');
 
-                /*ctxt.lyricTextFont = "'Crimson Text', serif";
-                ctxt.lyricTextSize *= 1.2;
+                ctxt.lyricTextFont = "'Crimson Text', serif";
+                //ctxt.lyricTextSize *= 1.2;
                 ctxt.dropCapTextFont = ctxt.lyricTextFont;
-                ctxt.annotationTextFont = ctxt.lyricTextFont;*/
+                ctxt.annotationTextFont = ctxt.lyricTextFont;
 
                 const mappings = exsurge.Gabc.createMappingsFromSource(ctxt, gabc);
                 const score = new exsurge.ChantScore(ctxt, mappings, true);
